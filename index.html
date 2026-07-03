@@ -12,21 +12,29 @@
     }
 
     html {
+      height: 100%;
       scroll-behavior: smooth;
+      overflow: hidden;
+      overscroll-behavior: none;
     }
 
     body {
+      height: 100%;
       margin: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
       background: #262722;
       color: #171813;
       font-family: "Courier New", monospace;
     }
 
     .page {
+      height: 100svh;
       min-height: 100svh;
       padding: 6vw;
       display: grid;
       place-items: center;
+      overflow: hidden;
       background-image:
         repeating-linear-gradient(
           0deg,
@@ -38,7 +46,9 @@
     .file {
       position: relative;
       width: min(900px, 100%);
+      max-height: 94svh;
       padding: clamp(25px, 6vw, 70px);
+      overflow: hidden;
       background: #d8cfad;
       box-shadow: 14px 18px 0 #1118;
       transform: rotate(-0.4deg);
@@ -75,16 +85,23 @@
       display: inline-block;
       margin-top: 25px;
       padding: 15px 20px;
+      border: 0;
       background: #20211c;
       color: #eee;
+      font-family: inherit;
+      font-size: 1rem;
       font-weight: bold;
       text-decoration: none;
-      transition: background 0.2s ease;
+      cursor: pointer;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
     }
 
     .button:hover,
-    .button:focus {
+    .button:focus-visible {
       background: #a22;
+      transform: translateY(-2px);
     }
 
     .photos {
@@ -94,7 +111,7 @@
     }
 
     .photo {
-      padding: 10px 10px 32px;
+      padding: 10px 10px 25px;
       background: #eee;
       box-shadow: 4px 7px 10px #0005;
       transform: rotate(2deg);
@@ -104,10 +121,11 @@
       transform: rotate(-3deg);
     }
 
-    .photo img,
-    .review img {
+    .photo img {
       display: block;
       width: 100%;
+      max-height: 30svh;
+      object-fit: cover;
     }
 
     .caption {
@@ -116,15 +134,79 @@
     }
 
     .review {
-      max-width: 520px;
+      width: min(520px, 100%);
       padding: 12px;
       background: #eee;
       transform: rotate(1deg);
     }
 
+    .review img {
+      display: block;
+      width: 100%;
+      max-height: 48svh;
+      object-fit: contain;
+    }
+
+    /* Only the active page is visible. */
+    .page[hidden] {
+      display: none;
+    }
+
     @media (max-width: 600px) {
+      .page {
+        padding: 18px;
+      }
+
+      .file {
+        padding: 25px 20px;
+      }
+
+      h1 {
+        font-size: clamp(2.2rem, 13vw, 4rem);
+      }
+
       .photos {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .photo {
+        padding: 7px 7px 18px;
+        font-size: 0.75rem;
+      }
+
+      .button {
+        margin-top: 14px;
+        padding: 12px 15px;
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .file {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 7vw, 4rem);
+      }
+
+      p {
+        margin: 0.6em 0;
+        line-height: 1.4;
+      }
+
+      .stamp {
+        font-size: 0.9rem;
+      }
+
+      .button {
+        margin-top: 10px;
+      }
+
+      .photo img {
+        max-height: 25svh;
       }
     }
 
@@ -132,13 +214,17 @@
       html {
         scroll-behavior: auto;
       }
+
+      .button {
+        transition: none;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- Birthday introduction -->
-  <section class="page">
+  <!-- Page 1: Birthday introduction -->
+  <section class="page" id="intro">
     <article class="file">
       <span class="stamp">TOP SECRET</span>
 
@@ -157,14 +243,18 @@
         <span class="redacted">ABSOLUTELY FREEZING</span>
       </p>
 
-      <a class="button" href="#mission">
+      <button
+        class="button"
+        type="button"
+        data-page="mission"
+      >
         OPEN CLASSIFIED PACKAGE →
-      </a>
+      </button>
     </article>
   </section>
 
-  <!-- Gift reveal -->
-  <section class="page" id="mission">
+  <!-- Page 2: Gift reveal -->
+  <section class="page" id="mission" hidden>
     <article class="file">
       <span class="stamp">MISSION ACCEPTED</span>
 
@@ -194,14 +284,18 @@
         </div>
       </div>
 
-      <a class="button" href="#report">
+      <button
+        class="button"
+        type="button"
+        data-page="report"
+      >
         VIEW FIELD REPORT →
-      </a>
+      </button>
     </article>
   </section>
 
-  <!-- Review -->
-  <section class="page" id="report">
+  <!-- Page 3: Review -->
+  <section class="page" id="report" hidden>
     <article class="file">
       <span class="stamp">WITNESS STATEMENT</span>
 
@@ -218,10 +312,52 @@
         Assessment: technically survived. Mission approved.
       </p>
 
-      <a class="button" href="#">
+      <button
+        class="button"
+        type="button"
+        data-page="intro"
+      >
         CLOSE FILE ↑
-      </a>
+      </button>
     </article>
   </section>
+
+  <script>
+    const pages = document.querySelectorAll(".page");
+    const navigationButtons =
+      document.querySelectorAll("[data-page]");
+
+    function showPage(pageId) {
+      pages.forEach((page) => {
+        page.hidden = page.id !== pageId;
+      });
+
+      history.replaceState(null, "", `#${pageId}`);
+
+      const activePage = document.getElementById(pageId);
+      const firstButton = activePage.querySelector("button");
+
+      if (firstButton) {
+        firstButton.focus();
+      }
+    }
+
+    navigationButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        showPage(button.dataset.page);
+      });
+    });
+
+    const requestedPage = location.hash.slice(1);
+
+    if (
+      requestedPage &&
+      document.getElementById(requestedPage)
+    ) {
+      showPage(requestedPage);
+    } else {
+      showPage("intro");
+    }
+  </script>
 </body>
 </html>
